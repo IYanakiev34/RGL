@@ -19,8 +19,8 @@ ASBarrel::ASBarrel()
 
 	ForceComp = CreateDefaultSubobject<URadialForceComponent>(TEXT("Force Comp"));
 	ForceComp->SetupAttachment(BarrelComp);
-	ForceComp->Radius = 1000.f;
-	ForceComp->ImpulseStrength = 10'000.f;
+	ForceComp->Radius = 750.f;
+	ForceComp->ImpulseStrength = 2500.f;
 	ForceComp->bImpulseVelChange = true;
 	ForceComp->AddCollisionChannelToAffect(ECC_WorldDynamic);
 }
@@ -40,7 +40,6 @@ void ASBarrel::PostInitializeComponents()
 
 void ASBarrel::OnActorHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	UE_LOG(LogTemp,Warning,TEXT("We are here"));
 	ForceComp->FireImpulse();
 
 	// Logging

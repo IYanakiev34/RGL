@@ -40,9 +40,36 @@ Another major thing is the reflection system and the unreal header tool. I think
 know the header tool and the property system. I was trying to create and interface and it took me way too long because I did not read the documentation
 inside the engine. in order to create an interface first you need reflection, then you also need another normal class, and then you need to know which is which.
 THe interface is always with U, however there is nothing in this class nothiiiing it is pure reflection. Then we have a normal I class with the same name,
-there we define the functions that we want and we tag them with UFUNCTION to make them either native only or bluepinrt callable or implementable. Then
+there we define the functions that we want and we tag them with UFUNCTION to make them either native only or blueprint callable or implementable. Then
 we can inherit from this I class in an actor and implement the method buuuuut there is a caviat the implementation needs to be in the form:
 InterfaceFunctionName_Implementation(....); Then how do we use this iinterface we can do something like: Character->GetClass()->ImplementsInterface(..)
 HOLD on here is the caviat on the I class but the U class should be the argument. I think by this point you are either very confused or have stopped following actively
 the point is it is very messy and you need to get used to it and practice.
+
+
+## The Basics Input Systems
+
+I was used to the old system, however, Epic Added a new one, which although it is a bit tricky to learn at first provides so mcuh more flexibility.
+Basically you have these input mapping contentx, a player can have multiple of them for diferent situations for example, when swimming, when in vechicle, or normal.
+Each mapping context defines a sets of actions for specific inputs. So for my case for now I need one mapping context and I want to have the following capabilities:
+
+	1. Move
+	2. Jump
+	3. Primary Attack
+	4. Look
+	5. Interact with items
+
+For moving we need again a function to bind,however now we also need to create an action asset. Then we need to bind it to the player blueprint. This action asset
+will define the 4 keys: W,A,S,D for moving allong with the modifiers and trigger. This is again something new. Basically a modifier explain how to modify the raw input
+for example we can negate it. If we press S we want to move backwards so we negate it. We can swizzle it which basically means swap the AXIS values. And many more common ones. We can also create our own if neede but I wil not do it now. Next we have the triggers. This can mean stuff like: pressing, holding, tapping, combos, etc. Again
+super versitile, most of the time you do not need to assign them, if you need it very simple. Now that we have the action in C++ we need to define a function
+called for example move than will take as a parameter FInputActionValue const &. This action will store the value of the input and based on it we can define our
+own logic. Sometimes you do not need to use the value, however, you still need to place it in the function arguments. So yeah this is it for the new input system.
+
+## Sweeping and Hitting
+I guess it helps to know the Engine architecutre, but for me ones I realized that the world holds all the context everything seemed to become very intuitive. Want to spawn
+an actor? use the world. Want to spawn an emitter? use the world, etc, etc, etc. So for sweeping we do the same. It is again made very intuitive. First you have many options
+for sweeping, by objects, tags, channels, etc. And then the actual calls are very easy you just fill out a struct nad call the method. I really enjoyt this method of programming because it is very declarative like Vulkan API. Overall just find what you want to sweep, fill a struct, get the hits, in an array if you have many, then
+you can do whatever you want with them. in my case i trigger the implementation of the interaction interface for the closest object. However in some cases you can trigger
+it for all objects if needed depending on the interface.
 
