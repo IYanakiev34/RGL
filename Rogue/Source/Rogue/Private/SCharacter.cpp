@@ -14,6 +14,7 @@
 
 // DEBUG
 #include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -60,6 +61,26 @@ void ASCharacter::BeginPlay()
 	}
 }
 
+void ASCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	AttributesComponent->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
+}
+
+void ASCharacter::OnHealthChanged(AActor* InstigatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta)
+{
+	if (NewHealth <= 0.f && Delta < 0.f)
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		DisableInput(PC);
+	}
+
+	if (Delta < 0.f)
+	{
+		GetMesh()->SetScalarParameterValueOnMaterials("TimeToHit", GetWorld()->GetTimeSeconds());
+	}
+}
+
 ////////////////////////// MOVEMENT /////////////////////////////////
 
 void ASCharacter::Move(FInputActionValue const& Value)
@@ -91,19 +112,20 @@ void ASCharacter::Look(FInputActionValue const& Value)
 }
 ////////////////////////// END MOVEMENT /////////////////////////////
 
+
+// Primary Attack ///////////////////////////////////////////////
 void ASCharacter::PrimaryAttack(FInputActionValue const& Value)
 {
 	PlayAnimMontage(AttackAnim);
-
 	GetWorldTimerManager().SetTimer(TimeHandle_Attack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.25f);
-
-	// GetWorldTimerManager().ClearTimer(TimeHandle_Attack); USed maybe is cvharacter dies in middle of attack or something
 }
 
 void ASCharacter::PrimaryAttack_TimeElapsed()
 {
 	SpawnProjectileFromClass(ProjectileClass);
 }
+//////////////////////////// End Primary Attack//////////////////
+
 
 void ASCharacter::PrimaryInteract(FInputActionValue const& Value)
 {
@@ -113,10 +135,10 @@ void ASCharacter::PrimaryInteract(FInputActionValue const& Value)
 	}
 }
 
+// Ultimate Attack ////////////////////////////////////////////////
 void ASCharacter::UltimateAttack(FInputActionValue const& Value)
 {
 	PlayAnimMontage(AttackAnim);
-
 	GetWorldTimerManager().SetTimer(TimeHandle_Attack, this, &ASCharacter::UltimateAttack_Elapsed, 0.25f);
 }
 
@@ -124,7 +146,10 @@ void ASCharacter::UltimateAttack_Elapsed()
 {
 	SpawnProjectileFromClass(UltimateAttackClass);
 }
+//////////////////////// End Ultimate Attack ////////////////////
 
+
+// Dash Attack //////////////////////////////////////////////////
 void ASCharacter::DashAttack(FInputActionValue const& Value)
 {
 	PlayAnimMontage(AttackAnim);
@@ -135,38 +160,49 @@ void ASCharacter::DashAttack_Elapsed()
 {
 	SpawnProjectileFromClass(DashAttackClass);
 }
-
+/////////////////////// End Dash Attack //////////////////////////
 
 void ASCharacter::SpawnProjectileFromClass(TSubclassOf<AActor> Clazz)
 {
-	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+	FVector HandLocation{ GetMesh()->GetSocketLocation("Muzzle_01") };
+	UGameplayStatics::SpawnEmitterAttached(CastingEffect, GetMesh(), "Muzzle_01");
+
+	// Spawn Actor params
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = this;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	FCollisionShape Shape;
-	Shape.SetSphere(30.f);
-
+	// Collision Query
 	FCollisionQueryParams QueryParams; // Ignore spawner
 	QueryParams.AddIgnoredActor(this);
 
+	// Shape
+	FCollisionShape Shape;
+	Shape.SetSphere(20.f);
+
+	// ObjectParams for querying types
 	FCollisionObjectQueryParams ObjectParams; // Add types to query
 	ObjectParams.AddObjectTypesToQuery(ECC_WorldDynamic);
 	ObjectParams.AddObjectTypesToQuery(ECC_WorldDynamic);
 	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
 
-	FVector TraceStart = CameraComp->GetComponentLocation();
-	FVector TraceEnd = TraceStart + (GetControlRotation().Vector() * 5000.f);
+	// Sweep by camera
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	FVector CameraLocation = PC->PlayerCameraManager->GetCameraLocation();
+	FVector CameraForward = PC->PlayerCameraManager->GetActorForwardVector();
+
+	FVector TraceStart{ CameraLocation };
+	FVector TraceEnd{ TraceStart + (CameraForward * 5000.f) };
 
 	FHitResult Hit; // Make sure we have a hit and update the end
 	if (GetWorld()->SweepSingleByObjectType(Hit, TraceStart, TraceEnd, FQuat::Identity, ObjectParams, Shape, QueryParams))
 	{
-		TraceEnd = Hit.ImpactPoint;
+		TraceEnd = Hit.ImpactPoint; // We have hit based on camera trace
 	}
 
 	// Get the rotation needed
-	FRotator ProjRotation = FRotationMatrix::MakeFromX(TraceEnd - TraceStart).Rotator();
+	FRotator ProjRotation = FRotationMatrix::MakeFromX(TraceEnd - HandLocation).Rotator();
 
 	// Spawn
 	FTransform const SpawnTM = FTransform(ProjRotation, HandLocation);

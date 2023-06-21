@@ -73,3 +73,62 @@ for sweeping, by objects, tags, channels, etc. And then the actual calls are ver
 you can do whatever you want with them. in my case i trigger the implementation of the interaction interface for the closest object. However in some cases you can trigger
 it for all objects if needed depending on the interface.
 
+## Rotation, Raycasting, Projectile
+
+So I decided to make 3 types of projectiles 2 in C++ and 1 in blueprint. Since all of them share common functionality I wanted to create a base class in C++ to reuse.
+So again the little quircks of unreal engine. First I need to declare it as abstract using the UCLASS macro. Then I need to sepcify it is bluprint implementable. Finally
+I can place the logic inside. An interesting thing I found was that I can do something like
+	UFUNCTION()
+	virtual void OnActorHit(Params...)
+I though I could not do that for some reasons since it is an event however I actually can. The functionality is not important but the mechanism was interesting. Then I was able to create a child class from c++ and blueprint also. I wanted to fix my aiming to aim in the center of the screen which was actually not so easy. So first
+you need to cast a ray from the camera to the center of the screen. There are different ways to do it and all of them feel weird to me. First I tried to deproject the
+screen center into a point and cast to it which was not that nice. Then I was like okay lets just cast from the camera forward since this will be the center of the screen.
+Well I need the camera rotation and location. However I cannot get them from the camera component like I can from any other component. You need to get the player controller
+then get the camera manager and then do what you want to do. The casting itself is simple and after you cast you get the end point and calculate the rotation. Okay but how.
+
+Option A: Use the Kismet Math library, however you have to include the header which is not optimal for one little function.
+Option B: FRotationMatrix::MakeFromX(TraceEnd - TraceStart).Vector() Better!!
+The quirk again is to remember which axis you need so you can get the proper rotation.
+
+## Custom Attribute Component, Anim BPs and Widgets
+
+Imagine you want to add health to the character. You can just add a field, but that becomes unscalable since for example enemies will also need the, you might have multiple
+other entities which health, stamina, etc. So you create a custom actor component to store the health. Then I got to use the cool event system of unreal. Basically you declare a delegate with however many params needed. Then you create a function like ApplyHealthChange, change the health and broadcast through the delegate the change.
+You can subscribe to this event via the component itself if you use it on anything. This makes it very easy to use event driven programming. This is a key concept which I explored in depth.
+
+Events in widgets:(HEALTH BAR)
+I created a material for the widget to display the progress (yes I know there is a progress bar for widgtes). Then on widget construction I subscribe to the on health changed
+event with a custom event. Which will update the material. In this way we do not constantly tick but rather act on events.
+
+Events in c++:
+You basically use the existing events and make the code more event driven, should avoid using the tick function as much as possible.
+
+Anim BP:
+In the anim bp we again use the even functionality to inform if the player has died, if so then simply change play proper animation. Again events are key for this.
+
+Widgets in general:
+
+Very powerful and well intergated. Could be used for both user widget like health bars and also 3D widgest on the screen for items, damage, etc. Could nest widgets
+and also apply materials to them.
+
+Core Ideas and yet to explore:
+	1. Use events as much as possible
+	2. Heavy lifting in C++ only style and data change in blueprints
+	3. Use time in materials
+	4. Explore the damage system
+	5. Explore animation further
+	6. Explore anim notifies
+	7. Explore the different blending spaced
+	8. Explore more on materials and how to create interesting effects, learn the difference between when to sue material and niagra
+	9. Explore niagra and its capabilities
+
+## Animating widgets and projecting on screen
+Widgets can be super easily animated which allows for some nice moves. For example I have a damage widget that spawns when you damage an actor. This widget get animated
+by size and color. I again use the "expose on spawn" for variables so that I can assign them properly when needed. For projecting the widget I just project a point in 3D
+space to a screen space point and position the widget there. An important note is that I currently do not use the built in damage system by epic which is something that I should definitely pick up on doing.
+
+Another animation which I have added to the projectile and character is the camera shake. When the projectile hits something or explodes, I create a camera shake. I have
+also added a casting particle effect in the player hand. For this I just used the UGameplayStatics::SpawnEmitterAttached and attached it to a socket in the mesh.
+
+
+

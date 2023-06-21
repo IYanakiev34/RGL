@@ -28,6 +28,10 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void PostInitializeComponents() override;
+
+	UFUNCTION()
+	void OnHealthChanged(AActor* InstigatorActor, USAttributeComponent* OwningComp, float NewHealth, float Delta);
 
 private:
 	void Move(FInputActionValue const& Value);
@@ -81,6 +85,9 @@ protected:
 	// Animations ////////////////////////////////////////////////////
 	UPROPERTY(EditAnywhere, Category = Attack)
 	UAnimMontage* AttackAnim;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Attack")
+	UParticleSystem* CastingEffect;
 
 	// Movement Properties ////////////////////////////////////////////
 	// The character mapping context that will be used for its input and actions

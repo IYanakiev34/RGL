@@ -20,6 +20,9 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attributes")
 	float Health;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Attributes")
+	float HealthMax;
 public:
 
 	UFUNCTION(BlueprintCallable)

@@ -15,11 +15,14 @@ ASMagicProjectile::ASMagicProjectile()
 
 void ASMagicProjectile::OnActorBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    USAttributeComponent* AttributeComp = Cast<USAttributeComponent>(OtherActor->GetComponentByClass(USAttributeComponent::StaticClass()));
-    if (AttributeComp)
+    if (ensure(OtherActor) && OtherActor != GetInstigator())
     {
-        Explode();
-        AttributeComp->ApplyHealthChange(-20.f);
+        USAttributeComponent* AttributeComp = Cast<USAttributeComponent>(OtherActor->GetComponentByClass(USAttributeComponent::StaticClass()));
+        if (AttributeComp)
+        {
+            Explode();
+            AttributeComp->ApplyHealthChange(-20.f);
+        }
     }
 }
 

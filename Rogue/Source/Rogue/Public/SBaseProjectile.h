@@ -9,6 +9,9 @@
 class UParticleSystemComponent;
 class UProjectileMovementComponent;
 class USphereComponent;
+class UAudioComponent;
+class USoundCue;
+class UCameraShakeBase;
 
 UCLASS(Abstract,Blueprintable, BlueprintType)
 class ROGUE_API ASBaseProjectile : public AActor
@@ -44,4 +47,19 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	UParticleSystem* ImpactEffect;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	UAudioComponent* FlightAudioComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundCue* ImpactSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Shake");
+	TSubclassOf<UCameraShakeBase> ImpactCameraShakeClazz;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Shake")
+	float ImpactShakeInnnerRadius;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Effects|Shake")
+	float ImpactShakeOuterRadius;
 };
